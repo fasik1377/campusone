@@ -74,7 +74,7 @@ export default function AnnouncementsPage() {
           { name: "title", label: "Title", required: true, full: true },
           { name: "body", label: "Message", type: "textarea", required: true },
           { name: "audience", label: "Audience (leave empty for everyone)", type: "multiselect", options: ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] })) },
-          ...(me.college ? [{ name: "isPublic", label: "Also show on the public college page", type: "checkbox" as const }] : []),
+          { name: "isPublic", label: "Also show publicly (home page news and the college page)", type: "checkbox" as const },
           ...(me.user.isSuperAdmin ? [{ name: "platformWide", label: "Platform-wide (all colleges)", type: "checkbox" as const }] : []),
         ]}
         initial={{ audience: [], isPublic: false, platformWide: !me.college }}

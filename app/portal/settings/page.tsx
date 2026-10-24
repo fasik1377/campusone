@@ -14,6 +14,8 @@ const fields: FieldDef[] = [
   { name: "email", label: "Contact email", type: "email" },
   { name: "phone", label: "Phone" },
   { name: "website", label: "Website" },
+  { name: "brandColor", label: "Brand colour", placeholder: "#1E8E3E" },
+  { name: "coverImage", label: "Cover image path or URL", placeholder: "/banner.jpg" },
   { name: "address", label: "Address" },
   { name: "description", label: "About the college (shown on the public page)", type: "textarea" },
   { name: "timezone", label: "Time zone" },

@@ -21,8 +21,75 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
+@theme {
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-shine: shine 3.5s ease-in-out infinite;
+  --animate-gradient: gradient-pan 8s ease infinite;
+  --animate-pulse-ring: pulse-ring 2s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+  --animate-grid-move: grid-move 3s linear infinite;
+
+  @keyframes grid-move {
+    from { background-position: 0 0; }
+    to { background-position: 0 60px; }
+  }
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes shine {
+    0%, 60% { transform: translateX(-120%) skewX(-20deg); }
+    100% { transform: translateX(220%) skewX(-20deg); }
+  }
+  @keyframes gradient-pan {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 0.8; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+}
+
 :root {
   color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Faint grid used behind the hero; fades out toward the edges. */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 75%);
+}
+
+.text-gold-gradient {
+  background: linear-gradient(100deg, #f8ecd2 0%, #d6a84f 35%, #f3d898 55%, #b8892f 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: var(--animate-gradient);
+}
+
+/* Cursor-following glow on feature cards; --mx / --my are set from JS. */
+.spotlight {
+  background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgb(214 168 79 / 0.14), transparent 45%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 body {

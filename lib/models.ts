@@ -35,6 +35,8 @@ const College = define(
       address: String,
       website: String,
       logoFileId: { type: ref },
+      coverImage: String, // public path or URL of a wide banner image
+      brandColor: String, // hex accent used on the public profile
       status: { type: String, enum: COLLEGE_STATUSES, default: "pending_setup" },
       statusReason: String,
       enabledModules: { type: [String], default: () => [...MODULE_KEYS] },
@@ -98,6 +100,12 @@ const AuditLog = define(
 const Counter = define(
   "Counter",
   new Schema({ key: { type: String, unique: true }, seq: { type: Number, default: 0 } }),
+);
+
+/** Single document (key "site") holding the editable public-website content. */
+const SiteSettings = define(
+  "SiteSettings",
+  new Schema({ key: { type: String, unique: true, default: "site" }, content: { type: Schema.Types.Mixed, default: {} }, updatedBy: String }, { timestamps: true }),
 );
 
 export async function nextSequence(key: string) {
@@ -420,4 +428,5 @@ export {
   Payment,
   Announcement,
   ServiceRequest,
+  SiteSettings,
 };

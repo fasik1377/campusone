@@ -12,6 +12,8 @@ export const collegeProfileSchema = z.object({
   phone: zs.str(40),
   address: zs.str(300),
   website: zs.str(200),
+  coverImage: zs.str(300),
+  brandColor: z.preprocess((v) => (v === "" ? undefined : v), z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a hex colour like #1E8E3E").optional()),
   timezone: zs.str(60),
   currency: zs.str(8),
   maxCreditsPerSemester: z.coerce.number().int().min(1).max(60).optional(),

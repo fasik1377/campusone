@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { CollegeGrid } from "@/components/college-grid";
+import { PageHero } from "@/components/page-hero";
 import { PublicPage } from "@/components/site";
 
 export const metadata: Metadata = { title: "College directory" };
 
 export default function CollegesPage() {
   return (
-    <PublicPage>
+    <PublicPage active="/colleges">
+      <PageHero eyebrow="Directory" title="Find your college" text="Browse colleges on CampusOne, explore their programs and admission requirements, and apply online." />
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <h1 className="text-3xl font-bold text-navy-900">College directory</h1>
-        <p className="mt-2 mb-8 text-slate-600">Browse colleges on CampusOne, explore their programs, and apply online.</p>
         <CollegeGrid searchable />
       </div>
     </PublicPage>

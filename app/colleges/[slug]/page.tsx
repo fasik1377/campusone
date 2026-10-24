@@ -5,8 +5,8 @@ import { Loading } from "@/components/ui";
 
 export default function CollegePage() {
   return (
-    <PublicPage>
-      <Suspense fallback={<Loading />}>
+    <PublicPage overlay active="/colleges">
+      <Suspense fallback={<div className="pt-24"><Loading /></div>}>
         <CollegeProfile />
       </Suspense>
     </PublicPage>

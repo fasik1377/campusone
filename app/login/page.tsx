@@ -3,28 +3,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/login-form";
+import { LoginVisual } from "@/components/login-visual";
 
 export const metadata: Metadata = { title: "Sign in" };
 
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-1">
-      <div className="hidden flex-1 flex-col justify-between bg-navy-900 p-12 lg:flex">
-        <Link href="/" className="flex items-center gap-3">
+      <div className="relative hidden flex-1 flex-col justify-between overflow-hidden bg-navy-900 p-12 lg:flex">
+        <div className="bg-grid absolute inset-0" />
+        <Link href="/" className="relative flex items-center gap-3">
           <Image src="/logo.png" alt="" width={44} height={44} className="rounded-md bg-white p-0.5" />
           <span className="text-xl font-bold text-white">CampusOne</span>
         </Link>
-        <div>
-          <p className="text-4xl font-bold leading-tight text-white">
-            One Portal.
-            <br />
-            Multiple Colleges.
-            <br />
-            <span className="text-gold-500">One Connected Future.</span>
-          </p>
-          <p className="mt-4 max-w-md text-navy-100">Sign in to your role-specific portal — administration, registry, teaching, finance or student services.</p>
-        </div>
-        <p className="text-xs text-navy-200">Protected system. Activity is logged.</p>
+        <LoginVisual />
+        <p className="relative text-xs text-navy-200">Protected system. Activity is logged.</p>
       </div>
       <div className="flex flex-1 items-center justify-center bg-white px-6 py-12">
         <div className="w-full max-w-sm">

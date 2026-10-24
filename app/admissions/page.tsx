@@ -2,17 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ApplicationStatus } from "@/components/application-status";
+import { PageHero } from "@/components/page-hero";
 import { PublicPage } from "@/components/site";
 
 export const metadata: Metadata = { title: "Admissions" };
 
 export default function AdmissionsPage() {
   return (
-    <PublicPage>
+    <PublicPage active="/admissions">
+      <PageHero eyebrow="Admissions" title="Join a CampusOne college" text="Every college on CampusOne accepts applications online. Track your application any time." />
       <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2">
         <div>
-          <h1 className="text-3xl font-bold text-navy-900">Admissions</h1>
-          <p className="mt-3 text-slate-600">Every college on CampusOne accepts applications online. The process:</p>
+          <h2 className="text-2xl font-bold text-navy-900">How it works</h2>
           <ol className="mt-5 flex flex-col gap-4">
             {[
               ["Choose a college and program", "Browse the directory and read each program's requirements."],

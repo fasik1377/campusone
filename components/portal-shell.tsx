@@ -34,6 +34,7 @@ const NAV: NavGroup[] = [
     title: "Platform",
     items: [
       { href: "/portal/colleges", label: "Colleges", show: (m) => m.user.isSuperAdmin },
+      { href: "/portal/site", label: "Website content", show: (m) => m.user.isSuperAdmin },
       { href: "/portal/audit", label: "Audit log", show: (m) => m.user.isSuperAdmin || m.has("college_admin") },
     ],
   },
@@ -171,6 +172,16 @@ export function PortalShell({ children }: { children: ReactNode }) {
               <button className="rounded-lg p-2 text-navy-900 hover:bg-slate-100 lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">
                 ☰
               </button>
+              {data.college && (
+                <Image
+                  src={data.college.logoFileId ? `/api/v1/files/${data.college.logoFileId}` : "/logo.png"}
+                  alt=""
+                  width={36}
+                  height={36}
+                  unoptimized
+                  className="hidden h-9 w-9 rounded-lg border border-slate-200 object-contain p-0.5 sm:block"
+                />
+              )}
               <div className="min-w-0 flex-1">
                 {data.colleges.length > 1 ? (
                   <select

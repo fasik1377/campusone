@@ -4,7 +4,7 @@ import { Announcement, College, Department, Program } from "@/lib/models";
 export const GET = handler<{ slug: string }>(async (_req, { params }) => {
   const { slug } = await params;
   const college = await College.findOne({ slug: String(slug).toLowerCase(), status: "active" })
-    .select("name code slug tagline description email phone address website logoFileId enabledModules")
+    .select("name code slug tagline description email phone address website logoFileId coverImage brandColor enabledModules")
     .lean();
   if (!college) throw notFound("College");
   const [departments, programs, announcements] = await Promise.all([

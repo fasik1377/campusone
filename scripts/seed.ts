@@ -1,5 +1,6 @@
 /**
- * Seeds CampusOne with a Super Admin and two demo colleges.
+ * Seeds CampusOne with a Super Admin, two demo colleges, and Africa Beza College.
+ * Africa Beza College is added on every run if it is missing, so it also reaches an already-seeded database.
  *   npm run seed            -> creates data only if it does not exist yet
  *   npm run seed -- --reset -> DROPS the database first, then seeds
  */
@@ -48,10 +49,99 @@ async function main() {
   await Promise.all(Object.values(mongoose.models).map((m) => m.syncIndexes()));
 
   if (await User.exists({ username: SUPER_ADMIN.username })) {
-    console.log("Super admin already exists — skipping seed. Use `npm run seed -- --reset` to start over.");
+    console.log("Super admin and demo colleges already exist — skipping them. Use `npm run seed -- --reset` to start over.");
+  } else {
+    await seedDemo();
+  }
+  await ensureAfricaBeza();
+}
+
+/** Stores a file from /public in GridFS as a public college logo, the same way an upload would. */
+async function uploadLogo(path: string, filename: string, contentType: string, college: mongoose.Types.ObjectId) {
+  const { readFile } = await import("fs/promises");
+  const data = await readFile(path);
+  const bucket = new mongoose.mongo.GridFSBucket(mongoose.connection.db!, { bucketName: "uploads" });
+  const stream = bucket.openUploadStream(filename, { metadata: { kind: "logo", college, public: true, contentType } });
+  await new Promise<void>((resolve, reject) => {
+    stream.once("finish", () => resolve());
+    stream.once("error", reject);
+    stream.end(data);
+  });
+  return stream.id as mongoose.Types.ObjectId;
+}
+
+/** Africa Beza College: added on every run if missing, so existing databases get it too. */
+async function ensureAfricaBeza() {
+  if (await College.exists({ code: "ABC" })) {
+    console.log("Africa Beza College already exists — skipping.");
     return;
   }
+  const abc = await College.create({
+    name: "Africa Beza College",
+    code: "ABC",
+    slug: "africa-beza-college",
+    tagline: "Lighting the way to knowledge, skills and service",
+    description:
+      "Africa Beza College prepares graduates in business, health sciences and computing through practical, community-focused education. Explore our programs below and apply online.",
+    address: "Ethiopia",
+    coverImage: "/africa_beza2.jpg",
+    brandColor: "#1E8E3E",
+    status: "active",
+    enabledModules: MODULE_KEYS,
+    gradingScale: DEFAULT_GRADING_SCALE,
+  });
+  abc.logoFileId = await uploadLogo("public/africa_beza.jpg", "africa_beza.jpg", "image/jpeg", abc._id);
+  await abc.save();
 
+  const [be, hs, it] = await Department.create([
+    { college: abc._id, name: "Business and Economics", code: "BE", description: "Accounting, finance and management." },
+    { college: abc._id, name: "Health Sciences", code: "HS", description: "Nursing and public health." },
+    { college: abc._id, name: "Computer Science and IT", code: "CSIT", description: "Software, networks and information systems." },
+  ]);
+  await Program.create([
+    { college: abc._id, department: be._id, name: "BA in Accounting and Finance", code: "ACFN", level: "Degree", durationYears: 3, totalCredits: 110, description: "Financial reporting, auditing, taxation and corporate finance.", admissionRequirements: "Secondary school leaving certificate, transcript and national ID.", admissionOpen: true },
+    { college: abc._id, department: be._id, name: "BA in Management", code: "MGMT", level: "Degree", durationYears: 3, totalCredits: 110, description: "Leadership, operations, marketing and entrepreneurship.", admissionRequirements: "Secondary school leaving certificate, transcript and national ID.", admissionOpen: true },
+    { college: abc._id, department: hs._id, name: "BSc in Nursing", code: "NURS", level: "Degree", durationYears: 4, totalCredits: 140, description: "Clinical nursing practice, community health and patient care.", admissionRequirements: "Secondary school certificate with passes in Biology and Chemistry; transcript and national ID.", admissionOpen: true },
+    { college: abc._id, department: it._id, name: "BSc in Computer Science", code: "BSCS", level: "Degree", durationYears: 4, totalCredits: 130, description: "Programming, databases, networking and software engineering.", admissionRequirements: "Secondary school certificate with a pass in Mathematics; transcript and national ID.", admissionOpen: true },
+  ]);
+  const courses = await Course.create([
+    { college: abc._id, department: be._id, code: "ACFN101", title: "Principles of Accounting I", credits: 3 },
+    { college: abc._id, department: be._id, code: "MGMT101", title: "Introduction to Management", credits: 3 },
+    { college: abc._id, department: hs._id, code: "NURS101", title: "Fundamentals of Nursing", credits: 4 },
+    { college: abc._id, department: hs._id, code: "ANAT101", title: "Human Anatomy", credits: 3 },
+    { college: abc._id, department: it._id, code: "CS101", title: "Introduction to Computing", credits: 3 },
+    { college: abc._id, department: it._id, code: "CS111", title: "Programming Fundamentals", credits: 4 },
+  ]);
+
+  const staff = async (name: string, username: string, role: string) =>
+    User.create({ name, username, passwordHash: await hash(STAFF_PASSWORD), roles: [{ role, college: abc._id }] });
+  await staff("Africa Beza Administrator", "abc.admin", "college_admin");
+  await staff("Africa Beza Registrar", "abc.registrar", "registrar");
+  const instructor = await staff("Africa Beza Instructor", "abc.instructor", "instructor");
+  await staff("Africa Beza Finance Officer", "abc.finance", "finance_officer");
+
+  const semester = await Semester.create({ college: abc._id, name: "Semester I", academicYear: "2026/27", startDate: new Date("2026-09-14"), endDate: new Date("2027-01-22"), isCurrent: true, registrationOpen: true });
+  const slots = [
+    [{ day: "Mon", start: "08:00", end: "10:00", room: "R101" }],
+    [{ day: "Tue", start: "08:00", end: "10:00", room: "R101" }],
+    [{ day: "Mon", start: "10:30", end: "12:30", room: "Skills Lab" }],
+    [{ day: "Wed", start: "08:00", end: "10:00", room: "R102" }],
+    [{ day: "Thu", start: "08:00", end: "10:00", room: "Computer Lab" }],
+    [{ day: "Fri", start: "08:00", end: "11:00", room: "Computer Lab" }],
+  ];
+  await Section.create(courses.map((c, i) => ({ college: abc._id, course: c._id, semester: semester._id, name: "A", instructor: instructor._id, capacity: 50, schedule: slots[i] })));
+  await Announcement.create({ college: abc._id, title: "Admissions open for 2026/27", body: "Africa Beza College is accepting applications for all programs. Apply online through CampusOne.", audience: [], isPublic: true, createdBy: "Africa Beza Registrar" });
+
+  console.log("\nAfrica Beza College added. Accounts:");
+  console.table([
+    { role: "College Admin", username: "abc.admin", password: STAFF_PASSWORD },
+    { role: "Registrar", username: "abc.registrar", password: STAFF_PASSWORD },
+    { role: "Instructor", username: "abc.instructor", password: STAFF_PASSWORD },
+    { role: "Finance Officer", username: "abc.finance", password: STAFF_PASSWORD },
+  ]);
+}
+
+async function seedDemo() {
   await User.create({ name: "Platform Administrator", username: SUPER_ADMIN.username, email: "admin@campusone.local", passwordHash: await hash(SUPER_ADMIN.password), isSuperAdmin: true });
 
   /* ------------------------------ College 1 ------------------------------ */
@@ -211,8 +301,16 @@ async function main() {
 }
 
 main()
-  .catch((error) => {
-    console.error(error);
+  .catch(async (error) => {
+    if (/ServerSelection/.test(error?.name ?? "")) {
+      const ip = await fetch("https://api.ipify.org").then((r) => r.text()).catch(() => "unknown");
+      console.error(
+        `\nCould not connect to MongoDB.\nIf you use MongoDB Atlas: open Network Access → Add IP Address and add ${ip} ` +
+          `(or 0.0.0.0/0 if your IP changes often), wait about a minute, then run \`npm run seed\` again.\n`,
+      );
+    } else {
+      console.error(error);
+    }
     process.exitCode = 1;
   })
   .finally(() => mongoose.disconnect());

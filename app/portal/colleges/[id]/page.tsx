@@ -17,6 +17,8 @@ const profileFields: FieldDef[] = [
   { name: "email", label: "Contact email", type: "email" },
   { name: "phone", label: "Phone" },
   { name: "website", label: "Website" },
+  { name: "brandColor", label: "Brand colour", placeholder: "#1E8E3E" },
+  { name: "coverImage", label: "Cover image path or URL", placeholder: "/banner.jpg", hint: "Wide banner shown on the public college page" },
   { name: "address", label: "Address" },
   { name: "description", label: "About the college", type: "textarea" },
   { name: "enabledModules", label: "Enabled modules", type: "multiselect", options: MODULE_KEYS.map((k) => ({ value: k, label: MODULE_LABELS[k] })) },
@@ -210,8 +212,8 @@ export default function CollegeDetailPage() {
             fields={profileFields}
             initial={c}
             submit={async (v) => {
-              const { name, tagline, email, phone, website, address, description, enabledModules } = v;
-              await api(`/admin/colleges/${id}`, { method: "PATCH", body: { name, tagline, email, phone, website, address, description, enabledModules } });
+              const { name, tagline, email, phone, website, address, description, enabledModules, brandColor, coverImage } = v;
+              await api(`/admin/colleges/${id}`, { method: "PATCH", body: { name, tagline, email, phone, website, address, description, enabledModules, brandColor, coverImage } });
               toast("College updated");
               reload();
             }}

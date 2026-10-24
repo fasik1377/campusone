@@ -18,7 +18,6 @@ export const metadata: Metadata = {
     template: "%s · CampusOne",
   },
   description: "One Portal. Multiple Colleges. One Connected Future. A unified platform for academic administration, student success, and institutional excellence.",
-  icons: { icon: "/logo.png" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

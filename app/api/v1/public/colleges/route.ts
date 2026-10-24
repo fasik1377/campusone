@@ -9,7 +9,7 @@ export const GET = handler(async (req) => {
     query.$or = [{ name: rx }, { code: rx }, { address: rx }, { tagline: rx }];
   }
   const colleges = await College.find(query)
-    .select("name code slug tagline address logoFileId enabledModules")
+    .select("name code slug tagline address logoFileId coverImage brandColor enabledModules")
     .sort({ name: 1 })
     .lean();
   const counts = await Program.aggregate<{ _id: unknown; n: number; open: number }>([

@@ -52,6 +52,10 @@ function errorResponse(error: unknown) {
     const fields = Object.keys(mongoError.keyValue ?? {}).filter((k) => k !== "college").join(", ");
     return Response.json({ error: `A record with the same ${fields || "value"} already exists.` }, { status: 409 });
   }
+  if (mongoError?.name === "MongooseServerSelectionError" || mongoError?.name === "MongoServerSelectionError") {
+    console.error("[api] Cannot reach MongoDB. If you use Atlas, add this server's public IP under Network Access.", mongoError.message);
+    return Response.json({ error: "The service is temporarily unavailable. Please try again shortly." }, { status: 503 });
+  }
   if (mongoError?.name === "ValidationError" || mongoError?.name === "CastError") {
     return Response.json({ error: mongoError.message }, { status: 400 });
   }

@@ -1,67 +1,62 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { FooterContact, FooterTagline } from "./footer-content";
+import { SiteHeader } from "./site-header";
 
-export function SiteHeader() {
-  return (
-    <header className="sticky top-0 z-30 border-b border-white/10 bg-navy-900">
-      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
-        <Link href="/" className="flex items-center gap-3">
-          <Image src="/logo.png" alt="" width={40} height={40} className="rounded-md bg-white p-0.5" priority />
-          <span>
-            <span className="block text-lg font-bold leading-tight text-white">CampusOne</span>
-            <span className="block text-[10px] font-semibold uppercase tracking-widest text-gold-500">College Management Platform</span>
-          </span>
-        </Link>
-        <nav className="ml-auto flex items-center gap-1 text-sm sm:gap-2" aria-label="Main">
-          <Link href="/colleges" className="hidden rounded-lg px-3 py-2 text-navy-100 hover:bg-white/10 hover:text-white sm:block">
-            Colleges
-          </Link>
-          <Link href="/admissions" className="hidden rounded-lg px-3 py-2 text-navy-100 hover:bg-white/10 hover:text-white sm:block">
-            Admissions
-          </Link>
-          <Link href="/apply" className="rounded-lg px-3 py-2 text-navy-100 hover:bg-white/10 hover:text-white">
-            Apply
-          </Link>
-          <Link href="/login" className="rounded-lg bg-gold-500 px-4 py-2 font-semibold text-navy-900 hover:bg-gold-400">
-            Sign in
-          </Link>
-        </nav>
-      </div>
-    </header>
-  );
-}
+export { SiteHeader };
 
 export function SiteFooter() {
   return (
-    <footer className="mt-auto bg-navy-900 text-navy-100">
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-10 sm:grid-cols-3 sm:px-6">
-        <div>
-          <p className="font-bold text-white">CampusOne</p>
-          <p className="mt-1 text-sm italic text-gold-500">One Portal. Multiple Colleges. One Connected Future.</p>
+    <footer className="relative mt-auto overflow-hidden bg-navy-900 text-navy-100">
+      <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-gold-500/60 to-transparent" />
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-14 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+        <div className="lg:col-span-2">
+          <Link href="/" className="flex items-center gap-3">
+            <Image src="/logo.png" alt="" width={44} height={44} className="rounded-lg bg-white p-0.5" />
+            <span className="text-xl font-bold text-white">CampusOne</span>
+          </Link>
+          <p className="mt-3 text-sm italic text-gold-500">One Portal. Multiple Colleges. One Connected Future.</p>
+          <FooterTagline />
         </div>
         <div className="text-sm">
-          <p className="mb-2 font-semibold text-white">Explore</p>
-          <ul className="flex flex-col gap-1">
-            <li><Link className="hover:text-white" href="/colleges">College directory</Link></li>
-            <li><Link className="hover:text-white" href="/apply">Apply online</Link></li>
-            <li><Link className="hover:text-white" href="/admissions">Check application status</Link></li>
+          <p className="mb-3 font-semibold text-white">Explore</p>
+          <ul className="flex flex-col gap-2">
+            <li><Link className="transition hover:text-gold-400" href="/colleges">College directory</Link></li>
+            <li><Link className="transition hover:text-gold-400" href="/apply">Apply online</Link></li>
+            <li><Link className="transition hover:text-gold-400" href="/admissions">Check application status</Link></li>
+            <li><Link className="transition hover:text-gold-400" href="/login">Staff &amp; student sign in</Link></li>
           </ul>
         </div>
         <div className="text-sm">
-          <p className="mb-2 font-semibold text-white">Support</p>
-          <p>Contact your college registrar for academic questions, or the platform administrator for account access.</p>
+          <p className="mb-3 font-semibold text-white">Contact</p>
+          <FooterContact />
         </div>
       </div>
-      <p className="border-t border-white/10 py-4 text-center text-xs text-navy-200">© {2026} CampusOne. All rights reserved.</p>
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 text-xs text-navy-200 sm:flex-row sm:px-6">
+          <p>© 2026 CampusOne. All rights reserved.</p>
+          <p>
+            Developed by{" "}
+            <a
+              href="https://fasik1377.github.io/fasika-abera/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-gold-400 underline-offset-4 transition hover:text-gold-500 hover:underline"
+            >
+              Fasika Abera
+            </a>
+          </p>
+        </div>
+      </div>
     </footer>
   );
 }
 
-export function PublicPage({ children }: { children: ReactNode }) {
+export function PublicPage({ children, overlay, active }: { children: ReactNode; overlay?: boolean; active?: string }) {
   return (
     <>
-      <SiteHeader />
+      <SiteHeader overlay={overlay} active={active} />
       <main className="flex-1">{children}</main>
       <SiteFooter />
     </>
