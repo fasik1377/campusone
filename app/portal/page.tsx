@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useMe } from "@/components/portal-shell";
+import { SuperAdminDashboard } from "@/components/super-admin-dashboard";
 import { Card, ErrorBox, Loading, PageHeader, StatCard } from "@/components/ui";
 import { fmtDate, fmtDateTime, useApi } from "@/lib/client";
-import { humanize } from "@/lib/roles";
+import { humanize, ROLE_LABELS, type Role } from "@/lib/roles";
+
+const ROLE_PRIORITY: Role[] = ["college_admin", "registrar", "dean", "department_head", "admissions_officer", "finance_officer", "instructor", "student"];
 
 type Dashboard = {
   panels: { title: string; stats: { label: string; value: string | number; href?: string; tone?: "default" | "warning" | "success" | "danger" }[] }[];
@@ -15,12 +18,27 @@ type Dashboard = {
 
 export default function DashboardPage() {
   const me = useMe();
+  // Platform administrators without a college role get the analytics dashboard.
+  if (me.user.isSuperAdmin && !me.college) return <SuperAdminDashboard />;
+  return <CollegeDashboard />;
+}
+
+function CollegeDashboard() {
+  const me = useMe();
   const { data, error, loading } = useApi<Dashboard>("/dashboard");
   const announcements = useApi<{ items: { _id: string; title: string; body: string; createdAt: string; createdBy?: string }[] }>("/announcements");
   const firstName = me.user.name.split(" ")[0];
+  // Headline role: the most senior role the person holds in the active college.
+  const topRole = ROLE_PRIORITY.find((r) => me.roles.includes(r));
+  const primary = me.user.isSuperAdmin ? "Super Admin" : topRole ? ROLE_LABELS[topRole] : null;
 
   return (
     <div>
+      {primary && (
+        <p className="mb-1 inline-flex items-center gap-2 rounded-full bg-gold-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gold-700 ring-1 ring-gold-600/20">
+          {primary} dashboard{me.college ? ` · ${me.college.name}` : ""}
+        </p>
+      )}
       <PageHeader
         title={`Welcome, ${firstName}`}
         description={

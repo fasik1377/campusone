@@ -38,6 +38,10 @@ export type NewStudentInput = {
   cohort?: string;
   studyMode?: string;
   studentId?: string;
+  /** Admin-chosen login; defaults to the student ID and a generated temporary password. */
+  username?: string;
+  password?: string;
+  mustChangePassword?: boolean;
   application?: Types.ObjectId;
 };
 
@@ -48,19 +52,19 @@ export async function createStudentWithAccount(college: Types.ObjectId, input: N
   const studentId = input.studentId?.trim() || (await generateStudentId(college));
   if (await Student.exists({ college, studentId })) throw badRequest(`Student ID ${studentId} already exists.`);
 
-  const username = studentId.toLowerCase();
+  const username = input.username?.trim().toLowerCase() || studentId.toLowerCase();
   if (await User.exists({ username })) throw badRequest(`Username ${username} is already taken.`);
   const email = input.email?.trim().toLowerCase() || undefined;
   if (email && (await User.exists({ email }))) throw badRequest(`A user with email ${email} already exists.`);
 
-  const password = temporaryPassword();
+  const password = input.password || temporaryPassword();
   const user = await User.create({
     name: `${input.firstName} ${input.lastName}`.trim(),
     email,
     username,
     passwordHash: await hashPassword(password),
     roles: [{ role: "student", college }],
-    mustChangePassword: true,
+    mustChangePassword: input.mustChangePassword ?? true,
   });
   try {
     const student = await Student.create({

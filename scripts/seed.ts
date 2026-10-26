@@ -1,8 +1,8 @@
 /**
- * Seeds CampusOne with a Super Admin, two demo colleges, and Africa Beza College.
- * Africa Beza College is added on every run if it is missing, so it also reaches an already-seeded database.
- *   npm run seed            -> creates data only if it does not exist yet
- *   npm run seed -- --reset -> DROPS the database first, then seeds
+ * Seeds CampusOne with the Super Admin and Africa Beza College. Each step only runs if its data is missing.
+ *   npm run seed                    -> Super Admin + Africa Beza College
+ *   npm run seed -- --demo          -> also two demo colleges with sample staff, students and grades
+ *   npm run seed -- --reset         -> DROPS the database first, then seeds
  */
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
@@ -30,7 +30,10 @@ try {
   // Fall back to variables already in the environment.
 }
 
-const SUPER_ADMIN = { username: "superadmin", password: process.env.SEED_ADMIN_PASSWORD ?? "CampusOne@2026" };
+const SUPER_ADMIN = {
+  username: (process.env.SEED_ADMIN_USERNAME ?? "fasikabera1@gmail.com").toLowerCase(),
+  password: process.env.SEED_ADMIN_PASSWORD ?? "CampusOne@2026",
+};
 const STAFF_PASSWORD = process.env.SEED_STAFF_PASSWORD ?? "Campus@2026";
 const STUDENT_PASSWORD = process.env.SEED_STUDENT_PASSWORD ?? "Student@2026";
 
@@ -48,12 +51,27 @@ async function main() {
   }
   await Promise.all(Object.values(mongoose.models).map((m) => m.syncIndexes()));
 
-  if (await User.exists({ username: SUPER_ADMIN.username })) {
-    console.log("Super admin and demo colleges already exist — skipping them. Use `npm run seed -- --reset` to start over.");
-  } else {
-    await seedDemo();
+  await ensureSuperAdmin();
+  if (process.argv.includes("--demo")) {
+    if (await College.exists({ code: "ATC" })) console.log("Demo colleges already exist — skipping.");
+    else await seedDemo();
   }
   await ensureAfricaBeza();
+}
+
+async function ensureSuperAdmin() {
+  if (await User.exists({ isSuperAdmin: true })) {
+    console.log("A Super Admin already exists — skipping.");
+    return;
+  }
+  await User.create({
+    name: "Fasika Abera",
+    username: SUPER_ADMIN.username,
+    email: SUPER_ADMIN.username.includes("@") ? SUPER_ADMIN.username : undefined,
+    passwordHash: await hash(SUPER_ADMIN.password),
+    isSuperAdmin: true,
+  });
+  console.log(`\nSuper Admin created — username: ${SUPER_ADMIN.username}  password: ${SUPER_ADMIN.password}`);
 }
 
 /** Stores a file from /public in GridFS as a public college logo, the same way an upload would. */
@@ -142,8 +160,6 @@ async function ensureAfricaBeza() {
 }
 
 async function seedDemo() {
-  await User.create({ name: "Platform Administrator", username: SUPER_ADMIN.username, email: "admin@campusone.local", passwordHash: await hash(SUPER_ADMIN.password), isSuperAdmin: true });
-
   /* ------------------------------ College 1 ------------------------------ */
   const atc = await College.create({
     name: "Addis Tech College",
@@ -285,9 +301,8 @@ async function seedDemo() {
   await Program.create({ college: bdp._id, department: ee._id, name: "Diploma in Electrical Installation", code: "DEI", level: "Diploma", durationYears: 2, totalCredits: 70, admissionOpen: true, admissionRequirements: "Grade 10 completion certificate." });
   await User.create({ name: "Kebede Ayele", username: "bdp.admin", email: "admin@bdpoly.edu.et", passwordHash: await hash(STAFF_PASSWORD), roles: [{ role: "college_admin", college: bdp._id }] });
 
-  console.log("\nSeed complete. Accounts:");
+  console.log("\nDemo colleges added. Accounts:");
   console.table([
-    { role: "Super Admin", username: SUPER_ADMIN.username, password: SUPER_ADMIN.password },
     { role: "College Admin (ATC)", username: "atc.admin", password: STAFF_PASSWORD },
     { role: "Registrar (ATC)", username: "atc.registrar", password: STAFF_PASSWORD },
     { role: "Admissions Officer (ATC)", username: "atc.admissions", password: STAFF_PASSWORD },

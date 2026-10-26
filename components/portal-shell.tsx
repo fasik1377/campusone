@@ -34,6 +34,7 @@ const NAV: NavGroup[] = [
     title: "Platform",
     items: [
       { href: "/portal/colleges", label: "Colleges", show: (m) => m.user.isSuperAdmin },
+      { href: "/portal/users", label: "Users & roles", show: (m) => m.user.isSuperAdmin },
       { href: "/portal/site", label: "Website content", show: (m) => m.user.isSuperAdmin },
       { href: "/portal/audit", label: "Audit log", show: (m) => m.user.isSuperAdmin || m.has("college_admin") },
     ],

@@ -12,6 +12,7 @@ const schema = z.object({
   status: z.enum(["active", "disabled"]).optional(),
   roles: staffRoleSchema.optional(),
   resetPassword: z.boolean().optional(),
+  password: z.preprocess((v) => (v === "" ? undefined : v), zs.password.optional()),
 });
 
 export const PATCH = handler<P>(async (req, { params }) => {
@@ -42,12 +43,16 @@ export const PATCH = handler<P>(async (req, { params }) => {
     user.status = data.status;
   }
   let password: string | undefined;
-  if (data.resetPassword) {
+  if (data.password) {
+    // Admin-chosen password; the user is asked to replace it at next sign-in.
+    user.passwordHash = await hashPassword(data.password);
+    user.mustChangePassword = true;
+  } else if (data.resetPassword) {
     password = temporaryPassword();
     user.passwordHash = await hashPassword(password);
     user.mustChangePassword = true;
   }
   await user.save();
-  await audit(auth, data.resetPassword ? "reset_password" : "update_staff", "User", user._id, { ...data, resetPassword: undefined });
+  await audit(auth, data.resetPassword || data.password ? "reset_password" : "update_staff", "User", user._id, { ...data, resetPassword: undefined, password: undefined });
   return json({ ok: true, temporaryPassword: password });
 });

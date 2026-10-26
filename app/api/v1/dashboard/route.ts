@@ -47,6 +47,28 @@ export const GET = handler(async (req) => {
         { label: "Applications (30 days)", value: applications },
       ],
     });
+    const [byRole, mustChange, disabled] = await Promise.all([
+      User.aggregate<{ _id: string; n: number }>([
+        { $match: { status: "active" } },
+        { $unwind: "$roles" },
+        { $group: { _id: { role: "$roles.role", u: "$_id" } } },
+        { $group: { _id: "$_id.role", n: { $sum: 1 } } },
+      ]),
+      User.countDocuments({ status: "active", mustChangePassword: true }),
+      User.countDocuments({ status: "disabled" }),
+    ]);
+    const roleCount = (r: string) => byRole.find((x) => x._id === r)?.n ?? 0;
+    panels.push({
+      title: "Users & roles",
+      stats: [
+        { label: "College admins", value: roleCount("college_admin"), href: "/portal/users" },
+        { label: "Registrars", value: roleCount("registrar"), href: "/portal/users" },
+        { label: "Instructors", value: roleCount("instructor"), href: "/portal/users" },
+        { label: "Students", value: roleCount("student"), href: "/portal/users" },
+        { label: "Awaiting first password change", value: mustChange, href: "/portal/users", tone: mustChange ? "warning" : "success" },
+        { label: "Disabled accounts", value: disabled, href: "/portal/users", tone: disabled ? "danger" : "default" },
+      ],
+    });
     activity = await AuditLog.find().sort({ createdAt: -1 }).limit(10).populate("college", "code").lean();
   }
 

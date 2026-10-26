@@ -156,7 +156,7 @@ function Hero() {
               <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-emerald-400" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
-            {content.heroEyebrow || (stats ? `Live · ${stats.colleges} colleges · ${stats.programs} programs` : "College Management Platform")}
+            {content.heroEyebrow || (stats ? `Live · ${stats.colleges} ${stats.colleges === 1 ? "college" : "colleges"} · ${stats.programs} programs` : "College Management Platform")}
           </motion.div>
 
           <h1 className="mt-6 text-4xl font-bold leading-[1.08] tracking-tight text-white sm:text-6xl">
@@ -361,7 +361,8 @@ function FloatCard({ className, delay, float, children }: { className: string; d
 
 function CollegeMarquee() {
   const { colleges } = useContext(HomeData);
-  if (!colleges?.length) return null;
+  // A strip of one repeated logo looks broken, so it only appears once there are several colleges.
+  if (!colleges || colleges.length < 2) return null;
   // Repeat the list so the strip is always wider than the viewport, then double it for a seamless loop.
   const base = Array.from({ length: Math.max(1, Math.ceil(8 / colleges.length)) }, () => colleges).flat();
   const items = [...base, ...base];
@@ -842,7 +843,8 @@ function FeaturedCard({ college }: { college: College }) {
 
 function CollegesSection() {
   const { colleges } = useContext(HomeData);
-  if (!colleges?.length) return null;
+  // The ring needs several colleges; with fewer, the featured-college section covers it.
+  if (!colleges || colleges.length < 3) return null;
   return (
     <section className="relative overflow-hidden bg-navy-900 py-24">
       <div className="bg-grid absolute inset-0" />

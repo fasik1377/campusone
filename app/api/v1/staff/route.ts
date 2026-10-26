@@ -22,7 +22,7 @@ export const GET = handler(async (req) => {
 const schema = z.object({
   name: zs.req(120),
   email: zs.email,
-  username: z.string().trim().toLowerCase().min(3).max(60).regex(/^[a-z0-9._-]+$/, "Use letters, numbers, dot, dash or underscore"),
+  username: zs.username,
   password: zs.password,
   roles: staffRoleSchema,
 });

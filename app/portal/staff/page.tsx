@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { RequireRole, useMe } from "@/components/portal-shell";
 import { FormModal, useOptions, type FieldDef } from "@/components/resource";
-import { Badge, Button, Card, DataTable, ErrorBox, inputClass, Loading, Modal, PageHeader, SearchBox, StatusBadge, useConfirm, useToast } from "@/components/ui";
+import { Badge, Button, Card, DataTable, ErrorBox, Input, inputClass, Loading, Modal, PageHeader, SearchBox, StatusBadge, useConfirm, useToast } from "@/components/ui";
 import { api, fmtDateTime, useApi } from "@/lib/client";
 import { ROLE_LABELS, STAFF_ROLES, type Role } from "@/lib/roles";
 
@@ -57,6 +57,8 @@ export default function StaffPage() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [password, setPassword] = useState<{ username: string; password: string } | null>(null);
+  const [passwordFor, setPasswordFor] = useState<any | null>(null);
+  const [chosen, setChosen] = useState("");
   const [q, setQ] = useState("");
   const toast = useToast();
   const { ask, dialog } = useConfirm();
@@ -120,16 +122,8 @@ export default function StaffPage() {
                       <Button size="sm" variant="ghost" onClick={() => setEditing(u)}>
                         Edit
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={async () => {
-                          if ((await ask({ title: "Reset password?", message: `A new temporary password will be generated for ${u.name}.`, confirm: "Reset" })) !== null) {
-                            patch(u, { resetPassword: true }, "Password reset");
-                          }
-                        }}
-                      >
-                        Reset password
+                      <Button size="sm" variant="ghost" onClick={() => setPasswordFor(u)}>
+                        Password
                       </Button>
                       <Button size="sm" variant="ghost" className={u.status === "active" ? "text-red-600" : ""} onClick={() => patch(u, { status: u.status === "active" ? "disabled" : "active" }, u.status === "active" ? "Account disabled" : "Account enabled")}>
                         {u.status === "active" ? "Disable" : "Enable"}
@@ -174,7 +168,50 @@ export default function StaffPage() {
           reload();
         }}
       />
-      <Modal open={!!password} onClose={() => setPassword(null)} title="Temporary password" footer={<Button onClick={() => setPassword(null)}>Done</Button>}>
+      <Modal
+        open={!!passwordFor}
+        onClose={() => {
+          setPasswordFor(null);
+          setChosen("");
+        }}
+        title={`Password for ${passwordFor?.name ?? ""}`}
+      >
+        <div className="flex flex-col gap-4">
+          <Input label="New password" type="text" hint="8+ characters with a letter and a number. They must change it at next sign-in." value={chosen} onChange={(e) => setChosen(e.target.value)} />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              disabled={chosen.length < 8}
+              onClick={async () => {
+                const u = passwordFor;
+                const pw = chosen;
+                setPasswordFor(null);
+                setChosen("");
+                try {
+                  await api(`/staff/${u._id}`, { method: "PATCH", body: { password: pw } });
+                  setPassword({ username: u.username, password: pw });
+                  toast("Password set");
+                } catch (e) {
+                  toast((e as Error).message, "error");
+                }
+              }}
+            >
+              Set this password
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const u = passwordFor;
+                setPasswordFor(null);
+                setChosen("");
+                patch(u, { resetPassword: true }, "Password reset");
+              }}
+            >
+              Generate a temporary password
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <Modal open={!!password} onClose={() => setPassword(null)} title="Sign-in details" footer={<Button onClick={() => setPassword(null)}>Done</Button>}>
         <p className="text-sm text-slate-600">Share these credentials securely. The user must change the password at first sign-in.</p>
         <p className="mt-3 rounded-lg bg-navy-50 p-3 font-mono text-sm">
           Username: {password?.username}

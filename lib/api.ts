@@ -201,6 +201,13 @@ export const zs = {
   date: z.preprocess(emptyToUndefined, z.coerce.date().optional()),
   email: z.preprocess(emptyToUndefined, z.email().toLowerCase().optional()),
   optId: z.preprocess(emptyToUndefined, z.string().regex(/^[a-f\d]{24}$/i, "Invalid reference").optional()),
+  username: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, "Username must be at least 3 characters")
+    .max(80)
+    .regex(/^[a-z0-9._@-]+$/, "Use letters, numbers, dot, dash, underscore or @"),
   password: z
     .string()
     .min(8, "Password must be at least 8 characters")
