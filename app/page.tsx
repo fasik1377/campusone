@@ -6,5 +6,6 @@ export default function Home() {
     <PublicPage overlay>
       <HomePage />
     </PublicPage>
+    //
   );
 }
