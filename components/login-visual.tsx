@@ -9,11 +9,7 @@ const LINES = ["One Portal.", "Multiple Colleges."];
 export function LoginVisual() {
   return (
     <div className="relative">
-      <motion.div
-        className="absolute -top-24 -left-16 h-72 w-72 rounded-full bg-gold-500/25 blur-3xl"
-        animate={{ scale: [1, 1.15, 1], x: [0, 30, 0] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-      />
+      <div className="absolute -top-24 -left-16 h-72 w-72 rounded-full bg-gold-500/20 blur-3xl" />
       <p className="relative text-4xl font-bold leading-tight text-white">
         {LINES.map((line, i) => (
           <span key={line} className="block overflow-hidden">
@@ -23,7 +19,7 @@ export function LoginVisual() {
           </span>
         ))}
         <span className="block overflow-hidden pb-1">
-          <motion.span className="text-gold-gradient block" initial={{ y: "110%" }} animate={{ y: 0 }} transition={{ duration: 0.8, delay: 0.34, ease }}>
+          <motion.span className="text-gold-static block" initial={{ y: "110%" }} animate={{ y: 0 }} transition={{ duration: 0.8, delay: 0.34, ease }}>
             One Connected Future.
           </motion.span>
         </span>

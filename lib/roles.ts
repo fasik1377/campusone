@@ -39,7 +39,16 @@ export const APPLICATION_STATUSES = [
   "rejected",
   "waitlisted",
 ] as const;
-export const ATTENDANCE_STATUSES = ["present", "absent", "late", "excused"] as const;
+export const COMPLAINT_CATEGORIES = ["grade", "course", "registration", "attendance", "finance", "other"] as const;
+export const COMPLAINT_CATEGORY_LABELS: Record<(typeof COMPLAINT_CATEGORIES)[number], string> = {
+  grade: "Grade problem / appeal",
+  course: "Course or teaching",
+  registration: "Course registration",
+  attendance: "Attendance record",
+  finance: "Fees & payments",
+  other: "Something else",
+};
+export const ATTENDANCE_STATUSES =["present", "absent", "late", "excused"] as const;
 export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
 export type GradeBand = { letter: string; min: number; points: number };

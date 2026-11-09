@@ -4,6 +4,7 @@ import {
   Application,
   AuditLog,
   College,
+  Complaint,
   Course,
   GradeEntry,
   Invoice,
@@ -97,11 +98,12 @@ export const GET = handler(async (req) => {
     }
 
     if (auth.has("registrar", "admissions_officer")) {
-      const [apps, regs, toPublish, requests] = await Promise.all([
+      const [apps, regs, toPublish, requests, complaints] = await Promise.all([
         Application.countDocuments({ college, status: { $in: ["submitted", "under_review", "info_required"] } }),
         Registration.countDocuments({ college, status: "pending" }),
         Section.countDocuments({ college, gradeStatus: "approved" }),
         ServiceRequest.countDocuments({ college, status: { $in: ["submitted", "in_progress"] } }),
+        Complaint.countDocuments({ college, status: { $in: ["submitted", "under_review"] } }),
       ]);
       panels.push({
         title: auth.has("registrar") ? "Registrar" : "Admissions",
@@ -112,6 +114,7 @@ export const GET = handler(async (req) => {
                 { label: "Students awaiting registration approval", value: regs, href: "/portal/registrations", tone: regs ? ("warning" as const) : ("success" as const) },
                 { label: "Grade sheets ready to publish", value: toPublish, href: "/portal/grade-approvals", tone: toPublish ? ("warning" as const) : ("success" as const) },
                 { label: "Open transcript / clearance requests", value: requests, href: "/portal/requests" },
+                { label: "Open complaints and grade appeals", value: complaints, href: "/portal/complaints", tone: complaints ? ("warning" as const) : ("success" as const) },
               ]
             : []),
         ],
@@ -192,11 +195,12 @@ export const GET = handler(async (req) => {
     if (auth.has("student")) {
       const student = await Student.findOne({ user: auth.userId, college }).lean();
       if (student) {
-        const [transcript, regs, invoices, requests] = await Promise.all([
+        const [transcript, regs, invoices, requests, myComplaints] = await Promise.all([
           transcriptFor(student._id),
           current ? Registration.find({ student: student._id, semester: current._id, status: { $in: ["pending", "approved"] } }).populate("course", "credits").lean() : [],
           Invoice.find({ student: student._id, status: { $in: ["unpaid", "partial"] } }).lean(),
           ServiceRequest.countDocuments({ student: student._id, status: { $in: ["submitted", "in_progress"] } }),
+          Complaint.countDocuments({ student: student._id, status: { $in: ["submitted", "under_review"] } }),
         ]);
         const balance = invoices.reduce((s, i) => s + i.amount - i.paidAmount, 0);
         const pending = regs.filter((r) => r.status === "pending").length;
@@ -210,6 +214,7 @@ export const GET = handler(async (req) => {
             { label: "Academic standing", value: standingFor(transcript.cgpa, transcript.creditsAttempted), href: "/portal/my/grades" },
             { label: "Balance due", value: formatMoney(balance), href: "/portal/my/finance", tone: balance ? "warning" : "success" },
             { label: "Open service requests", value: requests, href: "/portal/my/requests" },
+            { label: "Open complaints", value: myComplaints, href: "/portal/my/complaints" },
           ],
         });
       }

@@ -1,7 +1,7 @@
 import "server-only";
 import bcrypt from "bcryptjs";
 import { randomInt } from "crypto";
-import type { Types } from "mongoose";
+import mongoose, { type Types } from "mongoose";
 import { badRequest } from "./api";
 import { College, GradeEntry, nextSequence, Program, Student, User } from "./models";
 import { gradeFor, type GradeBand } from "./roles";
@@ -26,6 +26,14 @@ export async function generateStudentId(collegeId: Types.ObjectId) {
   return `${college?.code ?? "STU"}-${String(seq).padStart(4, "0")}-${year}`;
 }
 
+/** The ID the next automatically numbered student will get, without reserving it. */
+export async function generateStudentIdPreview(collegeId: Types.ObjectId) {
+  const college = await College.findById(collegeId).select("code").lean();
+  const counter = await mongoose.connection.db!.collection("counters").findOne({ key: `student:${collegeId}` });
+  const year = String(new Date().getFullYear()).slice(-2);
+  return `${college?.code ?? "STU"}-${String((counter?.seq ?? 0) + 1).padStart(4, "0")}-${year}`;
+}
+
 export type NewStudentInput = {
   firstName: string;
   lastName: string;
@@ -38,6 +46,8 @@ export type NewStudentInput = {
   cohort?: string;
   studyMode?: string;
   studentId?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
   /** Admin-chosen login; defaults to the student ID and a generated temporary password. */
   username?: string;
   password?: string;
@@ -83,6 +93,8 @@ export async function createStudentWithAccount(college: Types.ObjectId, input: N
       cohort: input.cohort ?? String(new Date().getFullYear()),
       studyMode: input.studyMode ?? "Regular",
       application: input.application,
+      emergencyContactName: input.emergencyContactName,
+      emergencyContactPhone: input.emergencyContactPhone,
       statusHistory: [{ status: "active", reason: "Admitted", by: "system", at: new Date() }],
     });
     return { student, username, password };
@@ -123,7 +135,7 @@ export async function transcriptFor(studentId: Types.ObjectId) {
     .populate("course", "code title credits")
     .populate("semester", "name academicYear startDate")
     .lean();
-  type Row = { course: { code: string; title: string; credits: number }; semester: { _id: unknown; name: string; academicYear: string; startDate?: Date }; total?: number | null; letter?: string | null; points?: number | null };
+  type Row = { _id: unknown; section: unknown; course: { _id: unknown; code: string; title: string; credits: number }; semester: { _id: unknown; name: string; academicYear: string; startDate?: Date }; total?: number | null; letter?: string | null; points?: number | null };
   const rows = entries as unknown as Row[];
   const bySemester = new Map<string, { semester: Row["semester"]; rows: Row[] }>();
   for (const row of rows) {
@@ -148,7 +160,7 @@ export async function transcriptFor(studentId: Types.ObjectId) {
       cumCredits += credits;
       return {
         semester: `${semester?.name} ${semester?.academicYear}`,
-        courses: rows.map((r) => ({ code: r.course.code, title: r.course.title, credits: r.course.credits, total: r.total, letter: r.letter, points: r.points })),
+        courses: rows.map((r) => ({ entryId: String(r._id), section: String(r.section), code: r.course.code, title: r.course.title, credits: r.course.credits, total: r.total, letter: r.letter, points: r.points })),
         gpa: credits ? +(points / credits).toFixed(2) : 0,
         cgpa: cumCredits ? +(cumPoints / cumCredits).toFixed(2) : 0,
       };

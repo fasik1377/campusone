@@ -4,9 +4,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DownloadButton, ExcelUpload } from "@/components/excel";
 import { RequireRole, useMe } from "@/components/portal-shell";
-import { FormModal, useOptions } from "@/components/resource";
-import { Badge, Button, Card, DataTable, ErrorBox, Loading, Modal, PageHeader, SearchBox, Select, StatusBadge, useToast } from "@/components/ui";
-import { api, saveBlob, toCsv, useApi } from "@/lib/client";
+import { useOptions } from "@/components/resource";
+import { Badge, Button, ButtonLink, Card, DataTable, ErrorBox, Loading, Modal, PageHeader, SearchBox, Select, StatusBadge } from "@/components/ui";
+import { saveBlob, toCsv, useApi } from "@/lib/client";
 import { STUDENT_STATUSES, humanize } from "@/lib/roles";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -23,10 +23,7 @@ export default function StudentsPage() {
   const programs = useOptions("/programs", programLabel);
   const [q, setQ] = useState("");
   const [importing, setImporting] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
-  const [created, setCreated] = useState<{ studentId: string; username: string; password: string } | null>(null);
-  const toast = useToast();
 
   const rows = useMemo(
     () => (data?.items ?? []).filter((s) => `${s.studentId} ${s.firstName} ${s.lastName} ${s.email}`.toLowerCase().includes(q.toLowerCase())),
@@ -52,7 +49,7 @@ export default function StudentsPage() {
                 <Button variant="secondary" onClick={() => setImporting(true)}>
                   ⬆ Import from Excel
                 </Button>
-                <Button onClick={() => setCreating(true)}>+ New student</Button>
+                <ButtonLink href="/portal/students/new">+ Add student</ButtonLink>
               </>
             )}
           </>
@@ -125,41 +122,6 @@ export default function StudentsPage() {
             </div>
           </div>
         )}
-      </Modal>
-
-      <FormModal
-        open={creating}
-        onClose={() => setCreating(false)}
-        title="New student"
-        fields={[
-          { name: "firstName", label: "First name", required: true },
-          { name: "lastName", label: "Last name", required: true },
-          { name: "program", label: "Program", type: "select", options: programs, required: true },
-          { name: "studentId", label: "Student ID", hint: "Leave empty to generate automatically" },
-          { name: "email", label: "Email", type: "email" },
-          { name: "phone", label: "Phone" },
-          { name: "gender", label: "Gender", type: "select", options: [{ value: "Male", label: "Male" }, { value: "Female", label: "Female" }] },
-          { name: "dateOfBirth", label: "Date of birth", type: "date" },
-          { name: "cohort", label: "Cohort", placeholder: String(new Date().getFullYear()) },
-          { name: "studyMode", label: "Study mode", type: "select", options: ["Regular", "Extension", "Distance", "Summer"].map((v) => ({ value: v, label: v })) },
-          { name: "address", label: "Address", full: true },
-        ]}
-        initial={{ studyMode: "Regular" }}
-        submit={async (v) => {
-          const res = await api("/students", { body: v });
-          setCreated(res.credentials);
-          toast("Student created");
-          reload();
-        }}
-      />
-      <Modal open={!!created} onClose={() => setCreated(null)} title="Student account created" footer={<Button onClick={() => setCreated(null)}>Done</Button>}>
-        <p className="rounded-lg bg-navy-50 p-3 font-mono text-sm">
-          Student ID: {created?.studentId}
-          <br />
-          Username: {created?.username}
-          <br />
-          Password: {created?.password}
-        </p>
       </Modal>
     </RequireRole>
   );

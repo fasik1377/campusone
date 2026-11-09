@@ -10,11 +10,7 @@ export function PageHero({ eyebrow, title, text, children }: { eyebrow: string; 
   return (
     <section className="relative overflow-hidden bg-navy-900">
       <div className="bg-grid absolute inset-0" />
-      <motion.div
-        className="absolute -top-32 right-0 h-80 w-80 rounded-full bg-gold-500/20 blur-3xl"
-        animate={{ x: [0, -40, 0], y: [0, 30, 0] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-      />
+      <div className="absolute -top-32 right-0 h-80 w-80 rounded-full bg-gold-500/15 blur-3xl" />
       <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16">
         <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease }} className="text-sm font-semibold uppercase tracking-[0.2em] text-gold-500">
           {eyebrow}

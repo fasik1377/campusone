@@ -2,6 +2,7 @@ import mongoose, { Schema, model, models, type Model } from "mongoose";
 import {
   APPLICATION_STATUSES,
   ATTENDANCE_STATUSES,
+  COMPLAINT_CATEGORIES,
   COLLEGE_STATUSES,
   DAYS,
   DEFAULT_ASSESSMENTS,
@@ -410,7 +411,40 @@ const ServiceRequest = define(
   ),
 );
 
+/** A student's complaint or grade appeal, handled by the registrar with a message thread. */
+const Complaint = define(
+  "Complaint",
+  new Schema(
+    {
+      college: tenant,
+      student: { type: ref, ref: "Student", required: true },
+      ticketNumber: { type: String, required: true, unique: true },
+      category: { type: String, enum: COMPLAINT_CATEGORIES, required: true },
+      subject: { type: String, required: true },
+      // Set for grade appeals: the published grade the student is questioning.
+      gradeEntry: { type: ref, ref: "GradeEntry" },
+      course: { type: ref, ref: "Course" },
+      section: { type: ref, ref: "Section" },
+      status: { type: String, enum: ["submitted", "under_review", "resolved", "rejected"], default: "submitted" },
+      messages: [
+        new Schema(
+          { by: { type: ref, ref: "User" }, byName: String, fromStudent: Boolean, body: String, at: { type: Date, default: Date.now } },
+          { _id: false },
+        ),
+      ],
+      resolution: String,
+      resolvedBy: String,
+      resolvedAt: Date,
+      // Unread markers so each side sees new replies.
+      studentUnread: { type: Boolean, default: false },
+      staffUnread: { type: Boolean, default: true },
+    },
+    { timestamps: true },
+  ),
+);
+
 export {
+  Complaint,
   College,
   User,
   AuditLog,

@@ -4,15 +4,17 @@ import { Card, DataTable, Empty } from "./ui";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type Transcript = {
-  semesters: { semester: string; gpa: number; cgpa: number; courses: { code: string; title: string; credits: number; total?: number; letter?: string; points?: number }[] }[];
+  semesters: { semester: string; gpa: number; cgpa: number; courses: { entryId?: string; section?: string; code: string; title: string; credits: number; total?: number; letter?: string; points?: number }[] }[];
   cgpa: number;
   creditsAttempted: number;
   creditsEarned: number;
   standing?: string;
 };
 
-/** Published results grouped by semester. Prints cleanly (portal chrome is hidden in print). */
-export function TranscriptView({ transcript, student }: { transcript: Transcript; student?: any }) {
+export type TranscriptCourse = Transcript["semesters"][number]["courses"][number];
+
+/** Published results grouped by semester. Pass `onAppeal` to show a "Report a problem" action per course. */
+export function TranscriptView({ transcript, student, onAppeal, appealed }: { transcript: Transcript; student?: any; onAppeal?: (c: TranscriptCourse) => void; appealed?: Set<string> }) {
   if (!transcript.semesters.length) {
     return (
       <Card>
@@ -42,6 +44,23 @@ export function TranscriptView({ transcript, student }: { transcript: Transcript
               { key: "total", label: "Total" },
               { key: "letter", label: "Grade", render: (c: any) => <b className={c.letter === "F" ? "text-red-600" : "text-navy-900"}>{c.letter}</b> },
               { key: "points", label: "Points" },
+              ...(onAppeal
+                ? [
+                    {
+                      key: "appeal",
+                      label: "",
+                      className: "text-right no-print",
+                      render: (c: any) =>
+                        appealed?.has(c.entryId) ? (
+                          <span className="text-xs font-medium text-amber-700">Appeal open</span>
+                        ) : (
+                          <button onClick={() => onAppeal(c)} className="rounded-lg px-2 py-1 text-xs font-medium text-navy-600 hover:bg-navy-50">
+                            Report a problem
+                          </button>
+                        ),
+                    },
+                  ]
+                : []),
             ]}
           />
         </Card>

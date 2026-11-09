@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMe } from "@/components/portal-shell";
+import { StudentHome } from "@/components/student-home";
 import { SuperAdminDashboard } from "@/components/super-admin-dashboard";
 import { Card, ErrorBox, Loading, PageHeader, StatCard } from "@/components/ui";
 import { fmtDate, fmtDateTime, useApi } from "@/lib/client";
@@ -20,6 +21,8 @@ export default function DashboardPage() {
   const me = useMe();
   // Platform administrators without a college role get the analytics dashboard.
   if (me.user.isSuperAdmin && !me.college) return <SuperAdminDashboard />;
+  // Students (with no staff role) get their own portal home.
+  if (me.roles.length && me.roles.every((r) => r === "student")) return <StudentHome />;
   return <CollegeDashboard />;
 }
 

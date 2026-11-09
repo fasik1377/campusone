@@ -19,9 +19,9 @@ function FeaturedCollegeCard({ college: c }: { college: College }) {
       <Link href={`/colleges/${c.slug}`} className="group grid grid-cols-1 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-xl transition-shadow hover:shadow-2xl md:grid-cols-[minmax(0,2fr)_3fr]">
         <div className="relative flex min-h-72 items-center justify-center p-10" style={{ background: `linear-gradient(135deg, ${accent}, #102a43)` }}>
           <div className="bg-grid absolute inset-0 opacity-60" />
-          <motion.div whileHover={{ rotate: -4, scale: 1.05 }} transition={{ type: "spring", stiffness: 200 }} className="relative rounded-[2rem] bg-white p-4 shadow-2xl">
+          <div className="relative rounded-[2rem] bg-white p-4 shadow-2xl">
             <Image src={collegeLogo(c.logoFileId)} alt={`${c.name} logo`} width={220} height={220} unoptimized priority className="h-44 w-44 object-contain sm:h-52 sm:w-52" />
-          </motion.div>
+          </div>
         </div>
         <div className="flex flex-col justify-center gap-4 p-8 sm:p-10">
           <p className="font-mono text-sm font-semibold" style={{ color: accent }}>

@@ -8,7 +8,6 @@ import { fmtDate, useApi } from "@/lib/client";
 import { CollegeLoginCard } from "./college-login";
 import { Icon, type IconName } from "./icons";
 import { collegeLogo } from "./site";
-import { TiltCard } from "./three-d";
 import { Badge, Card, Empty, Loading } from "./ui";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -58,17 +57,15 @@ export function CollegeProfile() {
         )}
         <div className="absolute inset-0 bg-linear-to-r from-navy-900 via-navy-900/85 to-navy-900/30" />
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 pt-28 pb-16 sm:px-6 sm:pt-36 lg:grid-cols-[auto_1fr]">
-          <TiltCard max={14} glare className="w-fit">
-            <motion.div
-              initial={{ scale: 0.6, opacity: 0, rotate: -10 }}
-              animate={{ scale: 1, opacity: 1, rotate: 0 }}
-              transition={{ duration: 0.9, ease }}
-              className="rounded-[2rem] bg-white p-4 shadow-2xl"
-              style={{ boxShadow: `0 0 0 6px ${accent}, 0 30px 60px -15px rgba(0,0,0,0.6)` }}
-            >
-              <Image src={collegeLogo(c.logoFileId)} alt={`${c.name} logo`} width={220} height={220} unoptimized priority className="h-40 w-40 object-contain sm:h-52 sm:w-52" />
-            </motion.div>
-          </TiltCard>
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease }}
+            className="w-fit rounded-[2rem] bg-white p-4 shadow-2xl"
+            style={{ boxShadow: `0 0 0 6px ${accent}, 0 30px 60px -15px rgba(0,0,0,0.6)` }}
+          >
+            <Image src={collegeLogo(c.logoFileId)} alt={`${c.name} logo`} width={220} height={220} unoptimized priority className="h-40 w-40 object-contain sm:h-52 sm:w-52" />
+          </motion.div>
           <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, delay: 0.15, ease }}>
             <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-mono text-sm font-semibold text-gold-400 backdrop-blur">{c.code}</p>
             <h1 className="mt-3 text-4xl font-extrabold tracking-tight text-white sm:text-6xl">{c.name}</h1>
@@ -125,17 +122,15 @@ export function CollegeProfile() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {PORTAL_PERKS.map((p, i) => (
                   <motion.div key={p.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08, ease }}>
-                    <TiltCard max={8}>
-                      <div className="flex h-full gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" style={{ transformStyle: "preserve-3d" }}>
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-lg" style={{ backgroundColor: accent, transform: "translateZ(30px)" }}>
-                          <Icon name={p.icon} className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-navy-900">{p.title}</h3>
-                          <p className="mt-1 text-sm text-slate-600">{p.text}</p>
-                        </div>
+                    <div className="flex h-full gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white" style={{ backgroundColor: accent }}>
+                        <Icon name={p.icon} className="h-5 w-5" />
                       </div>
-                    </TiltCard>
+                      <div>
+                        <h3 className="font-semibold text-navy-900">{p.title}</h3>
+                        <p className="mt-1 text-sm text-slate-600">{p.text}</p>
+                      </div>
+                    </div>
                   </motion.div>
                 ))}
               </div>

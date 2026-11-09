@@ -42,6 +42,12 @@ const studentInputSchema = z.object({
   cohort: zs.str(20),
   studyMode: zs.str(30),
   studentId: zs.str(40),
+  emergencyContactName: zs.str(120),
+  emergencyContactPhone: zs.str(30),
+  // Optional login chosen by the registrar; otherwise the student ID and a generated password are used.
+  username: z.preprocess((v) => (v === "" ? undefined : v), zs.username.optional()),
+  password: z.preprocess((v) => (v === "" ? undefined : v), zs.password.optional()),
+  mustChangePassword: z.boolean().optional(),
 });
 
 export const POST = handler(async (req) => {

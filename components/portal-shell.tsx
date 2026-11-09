@@ -6,6 +6,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { api, useApi } from "@/lib/client";
 import { ROLE_LABELS, type Role } from "@/lib/roles";
+import { motion, MotionConfig } from "motion/react";
+import { NotificationBell } from "./notification-bell";
 import { Button, cx, Loading, Notice, ToastProvider } from "./ui";
 
 export type Me = {
@@ -59,6 +61,7 @@ const NAV: NavGroup[] = [
       { href: "/portal/registrations", label: "Registrations", show: (m) => m.has("registrar", "department_head", "college_admin") && m.module("registration") },
       { href: "/portal/grade-approvals", label: "Grade approvals", show: (m) => m.has("registrar", "department_head", "dean", "college_admin") && m.module("grading") },
       { href: "/portal/requests", label: "Student requests", show: (m) => m.has("registrar") && m.module("requests") },
+      { href: "/portal/complaints", label: "Complaints & appeals", show: (m) => m.has("registrar", "college_admin", "dean", "department_head", "instructor") },
       { href: "/portal/reports", label: "Reports & Excel", show: (m) => m.has("registrar", "college_admin") },
     ],
   },
@@ -67,11 +70,13 @@ const NAV: NavGroup[] = [
   {
     title: "My studies",
     items: [
+      { href: "/portal/my/courses", label: "My courses", show: (m) => m.has("student") },
       { href: "/portal/my/registration", label: "Course registration", show: (m) => m.has("student") && m.module("registration") },
       { href: "/portal/my/timetable", label: "Timetable & attendance", show: (m) => m.has("student") },
       { href: "/portal/my/grades", label: "Grades & transcript", show: (m) => m.has("student") },
       { href: "/portal/my/finance", label: "Fees & payments", show: (m) => m.has("student") && m.module("finance") },
       { href: "/portal/my/requests", label: "Service requests", show: (m) => m.has("student") && m.module("requests") },
+      { href: "/portal/my/complaints", label: "Complaints & appeals", show: (m) => m.has("student") },
     ],
   },
   {
@@ -154,17 +159,42 @@ export function PortalShell({ children }: { children: ReactNode }) {
 
   return (
     <Ctx value={me}>
+      <MotionConfig reducedMotion="user">
       <ToastProvider>
         <div className="flex min-h-screen">
           <aside className={cx("no-print fixed inset-y-0 left-0 z-40 w-64 overflow-y-auto bg-navy-900 transition-transform lg:static lg:translate-x-0", menuOpen ? "translate-x-0" : "-translate-x-full")}>
-            <Link href="/portal" className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
-              <Image src="/logo.png" alt="" width={36} height={36} className="rounded-md bg-white p-0.5" />
-              <div>
-                <p className="font-bold leading-tight text-white">CampusOne</p>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gold-500">College Platform</p>
+            <div className="flex min-h-full flex-col">
+              {/* Branded with the active college when there is one */}
+              <Link href="/portal" className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+                <Image
+                  src={data.college?.logoFileId ? `/api/v1/files/${data.college.logoFileId}` : "/logo.png"}
+                  alt=""
+                  width={40}
+                  height={40}
+                  unoptimized
+                  className="h-10 w-10 rounded-lg bg-white object-contain p-0.5"
+                />
+                <div className="min-w-0">
+                  <p className="truncate font-bold leading-tight text-white">{data.college?.name ?? "CampusOne"}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-gold-500">{data.college ? "College portal" : "Platform admin"}</p>
+                </div>
+              </Link>
+              <div className="flex-1">{sidebar}</div>
+              <div className="flex items-center gap-3 border-t border-white/10 px-5 py-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-500 text-sm font-bold text-navy-900">
+                  {data.user.name
+                    .split(/\s+/)
+                    .map((p) => p[0])
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-white">{data.user.name}</p>
+                  <p className="truncate text-[11px] text-navy-200">Powered by CampusOne</p>
+                </div>
               </div>
-            </Link>
-            {sidebar}
+            </div>
           </aside>
           {menuOpen && <div className="fixed inset-0 z-30 bg-navy-900/40 lg:hidden" onClick={() => setMenuOpen(false)} />}
 
@@ -180,7 +210,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
                   width={36}
                   height={36}
                   unoptimized
-                  className="hidden h-9 w-9 rounded-lg border border-slate-200 object-contain p-0.5 sm:block"
+                  className="hidden h-9 w-9 rounded-lg border border-slate-200 object-contain p-0.5 sm:block lg:hidden"
                 />
               )}
               <div className="min-w-0 flex-1">
@@ -202,6 +232,7 @@ export function PortalShell({ children }: { children: ReactNode }) {
                 )}
                 <p className="truncate text-xs text-slate-500">{roleText}</p>
               </div>
+              <NotificationBell />
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-medium text-navy-900">{data.user.name}</p>
                 <p className="text-xs text-slate-500">@{data.user.username}</p>
@@ -236,12 +267,16 @@ export function PortalShell({ children }: { children: ReactNode }) {
                   </Notice>
                 </div>
               ) : (
-                children
+                // Each page fades in gently on navigation.
+                <motion.div key={pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}>
+                  {children}
+                </motion.div>
               )}
             </main>
           </div>
         </div>
       </ToastProvider>
+      </MotionConfig>
     </Ctx>
   );
 }

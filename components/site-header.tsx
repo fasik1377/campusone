@@ -87,9 +87,9 @@ export function SiteHeader({ overlay = false, active }: { overlay?: boolean; act
       <AnnouncementBar />
       <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
         <Link href="/" className="group flex items-center gap-3" onClick={() => setOpen(false)}>
-          <motion.span whileHover={{ rotate: -6, scale: 1.06 }} transition={{ type: "spring", stiffness: 300, damping: 15 }} className="block">
+          <span className="block">
             <Image src="/logo.png" alt="" width={40} height={40} className="rounded-lg bg-white p-0.5 shadow" priority />
-          </motion.span>
+          </span>
           <span>
             <span className="block text-lg font-bold leading-tight text-white">CampusOne</span>
             <span className="block text-[10px] font-semibold uppercase tracking-widest text-gold-500">College Management Platform</span>
@@ -105,7 +105,6 @@ export function SiteHeader({ overlay = false, active }: { overlay?: boolean; act
           ))}
           <Link href="/login" className="relative ml-2 overflow-hidden rounded-lg bg-gold-500 px-4 py-2 font-semibold text-navy-900 transition hover:bg-gold-400">
             <span className="relative z-10">Sign in</span>
-            <span className="absolute inset-y-0 left-0 w-1/3 animate-shine bg-white/40" aria-hidden />
           </Link>
         </nav>
 
