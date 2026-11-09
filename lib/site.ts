@@ -10,6 +10,9 @@ export async function loadSiteContent(): Promise<SiteContent> {
     ...DEFAULT_SITE_CONTENT,
     ...saved,
     announcementBar: { ...DEFAULT_SITE_CONTENT.announcementBar, ...(saved.announcementBar ?? {}) },
+    // Support details always have a value: an emptied field falls back to the platform default.
+    contactEmail: saved.contactEmail || DEFAULT_SITE_CONTENT.contactEmail,
+    contactPhone: saved.contactPhone || DEFAULT_SITE_CONTENT.contactPhone,
   };
 }
 

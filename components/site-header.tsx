@@ -57,6 +57,7 @@ const LINKS = [
   { href: "/colleges", label: "Colleges" },
   { href: "/admissions", label: "Admissions" },
   { href: "/apply", label: "Apply" },
+  { href: "/support", label: "Support" },
 ];
 
 /**

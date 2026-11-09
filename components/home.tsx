@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatePresence, motion, MotionConfig, type Variants } from "motion/react";
+import { animate, AnimatePresence, motion, MotionConfig, type Variants } from "motion/react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { api, ClientError, fmtDate, useApi } from "@/lib/client";
-import { DEFAULT_SITE_CONTENT, type SiteContent } from "@/lib/site-content";
+import { DEFAULT_SITE_CONTENT, formatPhone, phoneHref, type SiteContent } from "@/lib/site-content";
 import { Icon, type IconName } from "./icons";
 import { collegeLogo } from "./site";
 import { Button, cx, ErrorBox, inputClass, StatusBadge } from "./ui";
@@ -16,7 +16,10 @@ import { useSite, type PublicSite } from "./use-site";
 type Stats = { colleges: number; programs: number; departments: number; courses: number; students: number };
 type College = { _id: string; name: string; code: string; slug: string; tagline?: string; address?: string; logoFileId?: string; coverImage?: string; brandColor?: string; programCount: number; admissionsOpen: boolean };
 
-const HomeData = createContext<{ stats: Stats | null; colleges: College[] | null; site: PublicSite | null; content: SiteContent }>({
+type CalendarItem = { _id: string; name: string; academicYear: string; startDate?: string; endDate?: string; registrationOpen: boolean; isCurrent: boolean; college: { name: string; slug: string } | null };
+
+const HomeData = createContext<{ stats: Stats | null; colleges: College[] | null; site: PublicSite | null; content: SiteContent; calendar: CalendarItem[] | null }>({
+  calendar: null,
   stats: null,
   colleges: null,
   site: null,
@@ -31,11 +34,12 @@ const inView = { initial: "hidden", whileInView: "show", viewport: { once: true,
 
 export function HomePage() {
   const stats = useApi<Stats>("/public/stats");
+  const calendar = useApi<{ items: CalendarItem[] }>("/public/calendar");
   const colleges = useApi<{ items: College[] }>("/public/colleges");
   const site = useSite();
   return (
     <MotionConfig reducedMotion="user">
-      <HomeData value={{ stats: stats.data, colleges: colleges.data?.items ?? null, site, content: site?.content ?? DEFAULT_SITE_CONTENT }}>
+      <HomeData value={{ stats: stats.data, colleges: colleges.data?.items ?? null, site, content: site?.content ?? DEFAULT_SITE_CONTENT, calendar: calendar.data?.items ?? null }}>
         <Hero />
         <QuickLinks />
         <ImportantDates />
@@ -46,6 +50,7 @@ export function HomePage() {
         <News />
         <CollegesSection />
         <Faq />
+        <SupportBand />
         <CallToAction />
       </HomeData>
     </MotionConfig>
@@ -73,65 +78,93 @@ function SectionHeading({ eyebrow, title, text, light }: { eyebrow: string; titl
 /* --------------------------------- Hero --------------------------------- */
 
 function Hero() {
-  const { stats, content, site } = useContext(HomeData);
+  const { stats, content, site, colleges, calendar } = useContext(HomeData);
   const words = content.rotatingWords.length ? content.rotatingWords : DEFAULT_SITE_CONTENT.rotatingWords;
   const [word, setWord] = useState(0);
+  const ROTATE_MS = 3200;
   useEffect(() => {
-    const t = setInterval(() => setWord((w) => (w + 1) % words.length), 3200);
+    const t = setInterval(() => setWord((w) => (w + 1) % words.length), ROTATE_MS);
     return () => clearInterval(t);
   }, [words.length]);
-  const latest = site?.news[0];
+  const current = words[word % words.length];
+  const openSemester = calendar?.find((s) => s.registrationOpen);
+  const admissionsOpen = colleges?.some((c) => c.admissionsOpen);
+  const lines = content.heroTitle;
 
   return (
-    <section className="relative isolate overflow-hidden bg-navy-900 pt-28 pb-24 sm:pt-32 lg:pb-28">
-      {/* Static backdrop: faint grid and two soft glows */}
+    <section className="relative isolate overflow-hidden bg-navy-900 pt-[4.5rem] pb-24 lg:pb-28">
+      {/* Backdrop: faint grid with two slow, soft light drifts */}
       <div className="bg-grid absolute inset-0 -z-10" />
-      <div className="absolute -top-40 right-0 -z-10 h-[460px] w-[460px] rounded-full bg-gold-500/15 blur-3xl" />
-      <div className="absolute -bottom-40 -left-32 -z-10 h-[420px] w-[420px] rounded-full bg-sky-500/10 blur-3xl" />
+      <motion.div
+        aria-hidden
+        className="absolute -top-48 right-[-10%] -z-10 h-[520px] w-[520px] rounded-full bg-gold-500/20 blur-3xl"
+        animate={{ x: [0, -60, 0], y: [0, 40, 0] }}
+        transition={{ duration: 26, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        aria-hidden
+        className="absolute -bottom-48 left-[-10%] -z-10 h-[480px] w-[480px] rounded-full bg-sky-500/15 blur-3xl"
+        animate={{ x: [0, 70, 0], y: [0, -30, 0] }}
+        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+      />
 
-      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.1fr_1fr]">
-        <motion.div variants={stagger(0.1)} initial="hidden" animate="show">
-          {latest ? (
-            <motion.div variants={fadeUp}>
-              <Link
-                href={latest.college ? `/colleges/${latest.college.slug}` : "#news"}
-                className="group inline-flex max-w-full items-center gap-2 rounded-full border border-white/15 bg-white/5 py-1 pr-3 pl-1 text-sm text-navy-100 transition hover:border-gold-500/50 hover:bg-white/10"
-              >
-                <span className="rounded-full bg-gold-500 px-2 py-0.5 text-xs font-semibold text-navy-900">New</span>
-                <span className="truncate">{latest.title}</span>
-                <Icon name="arrow" className="h-3.5 w-3.5 shrink-0 text-gold-400 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </motion.div>
-          ) : (
-            content.heroEyebrow && (
-              <motion.p variants={fadeUp} className="text-sm font-semibold uppercase tracking-[0.2em] text-gold-400">
-                {content.heroEyebrow}
-              </motion.p>
-            )
-          )}
+      <HeroTicker />
 
-          <motion.h1 variants={fadeUp} className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight text-white sm:text-6xl">
-            {content.heroTitle[0]}
-            <br />
-            {content.heroTitle[1]}
-            <br />
-            <span className="text-gold-static">{content.heroTitle[2]}</span>
-          </motion.h1>
+      <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-4 pt-14 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:pt-16">
+        <div>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease }}>
+            {admissionsOpen || openSemester ? (
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-sm font-medium text-emerald-200">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-emerald-400" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+                {admissionsOpen ? "Admissions open" : "Registration open"}
+                {openSemester && ` · ${openSemester.name} ${openSemester.academicYear}`}
+              </span>
+            ) : (
+              content.heroEyebrow && <span className="text-sm font-semibold uppercase tracking-[0.2em] text-gold-400">{content.heroEyebrow}</span>
+            )}
+          </motion.div>
 
-          <motion.p variants={fadeUp} className="mt-6 max-w-xl text-lg text-navy-100">
+          {/* Headline: each word rises into place once */}
+          <h1 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight text-white sm:text-6xl">
+            {lines.map((line, li) => (
+              <span key={li} className={cx("block", li === 2 && "text-gold-static")}>
+                {line.split(" ").map((w, wi) => (
+                  <span key={wi} className="inline-block overflow-hidden pb-1 align-bottom">
+                    <motion.span
+                      className="inline-block"
+                      initial={{ y: "105%" }}
+                      animate={{ y: 0 }}
+                      transition={{ duration: 0.7, delay: 0.15 + li * 0.18 + wi * 0.06, ease }}
+                    >
+                      {w}&nbsp;
+                    </motion.span>
+                  </span>
+                ))}
+              </span>
+            ))}
+          </h1>
+
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8, duration: 0.6 }} className="mt-6 max-w-xl text-lg text-navy-100">
             {content.heroSubtitle}{" "}
-            <span className="relative inline-grid align-bottom font-semibold text-gold-400">
+            {/* Rotating word with a thin timer bar showing when it will change */}
+            <span className="relative inline-flex flex-col align-bottom">
               <AnimatePresence mode="wait" initial={false}>
-                <motion.span key={words[word % words.length]} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
-                  {words[word % words.length]}.
+                <motion.span key={current} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.3 }} className="font-semibold text-gold-400">
+                  {current}.
                 </motion.span>
               </AnimatePresence>
+              <span className="mt-0.5 h-0.5 w-full overflow-hidden rounded bg-white/10">
+                <motion.span key={`bar-${word}`} className="block h-full bg-gold-500/70" initial={{ width: 0 }} animate={{ width: "100%" }} transition={{ duration: ROTATE_MS / 1000, ease: "linear" }} />
+              </span>
             </span>
           </motion.p>
 
-          <motion.div variants={fadeUp} className="mt-9 flex flex-wrap gap-3">
-            <Link href="/colleges" className="inline-flex items-center gap-2 rounded-xl bg-gold-500 px-6 py-3.5 font-semibold text-navy-900 shadow-lg shadow-gold-500/20 transition hover:bg-gold-400">
-              Explore colleges <Icon name="arrow" className="h-4 w-4" />
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.95, duration: 0.5, ease }} className="mt-9 flex flex-wrap gap-3">
+            <Link href="/colleges" className="group inline-flex items-center gap-2 rounded-xl bg-gold-500 px-6 py-3.5 font-semibold text-navy-900 shadow-lg shadow-gold-500/20 transition hover:bg-gold-400">
+              Explore colleges <Icon name="arrow" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link href="/admissions" className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-6 py-3.5 font-semibold text-white transition hover:bg-white/10">
               How admission works
@@ -139,26 +172,113 @@ function Hero() {
           </motion.div>
 
           {stats && (
-            <motion.dl variants={fadeUp} className="mt-10 grid max-w-lg grid-cols-3 divide-x divide-white/10 rounded-2xl border border-white/10 bg-white/5 py-4 text-center">
-              {[
-                [stats.programs, "Programs"],
-                [stats.courses, "Courses"],
-                [stats.departments, "Departments"],
-              ].map(([v, l]) => (
-                <div key={l}>
-                  <dd className="text-2xl font-bold text-white">{v}</dd>
+            <motion.dl initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.1, duration: 0.5, ease }} className="mt-10 grid max-w-lg grid-cols-3 gap-3">
+              {(
+                [
+                  [stats.programs, "Programs", "grades"],
+                  [stats.courses, "Courses", "registration"],
+                  [stats.departments, "Departments", "building"],
+                ] as const
+              ).map(([v, l, icon]) => (
+                <div key={l} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-center backdrop-blur-sm">
+                  <Icon name={icon} className="mx-auto h-4 w-4 text-gold-400" />
+                  <dd className="mt-1 text-2xl font-bold text-white">
+                    <CountUp value={v} />
+                  </dd>
                   <dt className="text-xs text-navy-200">{l}</dt>
                 </div>
               ))}
             </motion.dl>
           )}
-        </motion.div>
+        </div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.25, ease }}>
-          <StartPanel />
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.35, ease }} className="relative pt-6">
+          {/* Two soft cards stacked behind the panel give it depth */}
+          <div aria-hidden className="absolute inset-0 top-6 translate-x-6 translate-y-6 rounded-3xl bg-white/5 ring-1 ring-white/10" />
+          <div aria-hidden className="absolute inset-0 top-6 translate-x-3 translate-y-3 rounded-3xl bg-gold-500/25" />
+          <LiveFacts />
+          <div className="relative">
+            <StartPanel />
+          </div>
         </motion.div>
       </div>
     </section>
+  );
+}
+
+/** Counts up from zero once when the hero loads. */
+function CountUp({ value }: { value: number }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    const controls = animate(0, value, { duration: 1.4, delay: 1.1, ease, onUpdate: (v) => setN(Math.round(v)) });
+    return () => controls.stop();
+  }, [value]);
+  return <>{n.toLocaleString()}</>;
+}
+
+/** A slow news ticker along the top of the hero: announcements, open registration, and support. Pauses on hover. */
+function HeroTicker() {
+  const { site, calendar, content } = useContext(HomeData);
+  const items: { text: string; href: string; tag: string }[] = [
+    ...(site?.news ?? []).map((n) => ({ text: n.title, href: n.college ? `/colleges/${n.college.slug}` : "#news", tag: n.college?.name ?? "News" })),
+    ...(calendar ?? [])
+      .filter((s) => s.registrationOpen)
+      .map((s) => ({ text: `Registration open — ${s.name} ${s.academicYear}`, href: "#calendar", tag: s.college?.name ?? "Calendar" })),
+    { text: `Need help? Call ${formatPhone(content.contactPhone)} or email ${content.contactEmail}`, href: "/support", tag: "Support" },
+  ];
+  // Repeat so the strip is always wider than the screen, then double it for a seamless loop.
+  const base = Array.from({ length: Math.max(1, Math.ceil(6 / items.length)) }, () => items).flat();
+  return (
+    <div className="border-y border-white/10 bg-white/[0.03]">
+      <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-2.5 sm:px-6">
+        <span className="shrink-0 rounded-md bg-gold-500 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-navy-900">Latest</span>
+        <div className="group relative flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_4%,black_96%,transparent)]">
+          <div className="flex w-max animate-marquee gap-10 group-hover:[animation-play-state:paused]">
+            {[...base, ...base].map((it, i) => (
+              <Link key={i} href={it.href} className="flex shrink-0 items-center gap-2 text-sm text-navy-100 transition hover:text-white" aria-hidden={i >= base.length} tabIndex={i >= base.length ? -1 : 0}>
+                <span className="text-xs font-semibold text-gold-400">{it.tag}</span>
+                <span>{it.text}</span>
+                <span className="text-white/20" aria-hidden>
+                  •
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Small chip above the Start panel that cycles through live facts. */
+function LiveFacts() {
+  const { stats, calendar, colleges } = useContext(HomeData);
+  const facts: string[] = [];
+  const current = calendar?.find((s) => s.isCurrent);
+  if (current?.endDate && +new Date(current.endDate) > Date.now()) {
+    facts.push(`${Math.ceil((+new Date(current.endDate) - Date.now()) / 864e5)} days left in ${current.name} ${current.academicYear}`);
+  }
+  const open = colleges?.filter((c) => c.admissionsOpen) ?? [];
+  if (open.length) facts.push(`Applications open at ${open.length === 1 ? open[0].name : `${open.length} colleges`}`);
+  if (stats) facts.push(`${stats.programs} programs and ${stats.courses} courses to choose from`);
+  facts.push("Track your application in seconds — no login needed");
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setI((x) => x + 1), 4000);
+    return () => clearInterval(t);
+  }, []);
+  const fact = facts[i % facts.length];
+  return (
+    <div className="absolute -top-1 left-6 z-10 flex max-w-[85%] items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-navy-900 shadow-lg">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gold-500 text-navy-900">
+        <Icon name="spark" className="h-3 w-3" />
+      </span>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.span key={fact} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.25 }} className="truncate">
+          {fact}
+        </motion.span>
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -390,11 +510,8 @@ function QuickLinks() {
 
 /* ---------------------------- Important dates ---------------------------- */
 
-type CalendarItem = { _id: string; name: string; academicYear: string; startDate?: string; endDate?: string; registrationOpen: boolean; isCurrent: boolean; college: { name: string; slug: string } | null };
-
 function ImportantDates() {
-  const { data } = useApi<{ items: CalendarItem[] }>("/public/calendar");
-  const items = data?.items ?? [];
+  const items = useContext(HomeData).calendar ?? [];
   if (!items.length) return null;
   const day = 864e5;
   return (
@@ -830,6 +947,36 @@ function Faq() {
           ))}
         </div>
       </div>
+    </section>
+  );
+}
+
+/* -------------------------------- Support -------------------------------- */
+
+function SupportBand() {
+  const { content } = useContext(HomeData);
+  return (
+    <section className="px-4 pb-16 sm:px-6">
+      <motion.div variants={fadeUp} {...inView} className="mx-auto flex max-w-6xl flex-col items-start gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 lg:flex-row lg:items-center">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gold-50 text-2xl" aria-hidden>
+          💬
+        </div>
+        <div className="flex-1">
+          <h2 className="text-xl font-bold text-navy-900">Need help?</h2>
+          <p className="mt-1 text-slate-600">Questions about applying, signing in, grades or fees? Our support team is a call or an email away.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a href={phoneHref(content.contactPhone)} className="inline-flex items-center gap-2 rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-navy-800">
+            📞 {formatPhone(content.contactPhone)}
+          </a>
+          <a href={`mailto:${content.contactEmail}`} className="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-navy-900 transition hover:bg-slate-50">
+            ✉️ {content.contactEmail}
+          </a>
+          <Link href="/support" className="inline-flex items-center gap-1 rounded-xl px-3 py-2.5 text-sm font-semibold text-navy-600 hover:underline">
+            Help centre <Icon name="arrow" className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      </motion.div>
     </section>
   );
 }

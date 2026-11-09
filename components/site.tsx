@@ -26,6 +26,7 @@ export function SiteFooter() {
             <li><Link className="transition hover:text-gold-400" href="/apply">Apply online</Link></li>
             <li><Link className="transition hover:text-gold-400" href="/admissions">Check application status</Link></li>
             <li><Link className="transition hover:text-gold-400" href="/login">Staff &amp; student sign in</Link></li>
+            <li><Link className="transition hover:text-gold-400" href="/support">Help &amp; support</Link></li>
           </ul>
         </div>
         <div className="text-sm">

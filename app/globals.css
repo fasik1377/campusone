@@ -24,6 +24,13 @@
 @theme {
   /* The dashboard's "live" indicator dot. */
   --animate-pulse-ring: pulse-ring 2s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+  /* The home page's news ticker: slow enough to read. */
+  --animate-marquee: marquee 60s linear infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
 
   @keyframes pulse-ring {
     0% { transform: scale(0.8); opacity: 0.8; }

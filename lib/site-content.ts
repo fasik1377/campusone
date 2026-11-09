@@ -33,9 +33,21 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   ],
   ctaTitle: "Your next chapter starts here.",
   ctaText: "Apply to a college in minutes, or sign in to your portal to pick up where you left off.",
-  contactEmail: "",
-  contactPhone: "",
+  contactEmail: "fasikabera1@gmail.com",
+  contactPhone: "0964037658",
   contactAddress: "",
   footerTagline: "A unified digital platform for academic administration, student success, and institutional excellence.",
   announcementBar: { enabled: false, text: "", link: "" },
 };
+
+/** "0964037658" → "0964 037 658" for display. */
+export function formatPhone(phone: string) {
+  const d = phone.replace(/\D/g, "");
+  return d.length === 10 ? `${d.slice(0, 4)} ${d.slice(4, 7)} ${d.slice(7)}` : phone;
+}
+
+/** Tap-to-call link; local Ethiopian numbers (0XXXXXXXXX) get the +251 country code. */
+export function phoneHref(phone: string) {
+  const d = phone.replace(/[^\d+]/g, "");
+  return `tel:${/^0\d{9}$/.test(d) ? `+251${d.slice(1)}` : d}`;
+}

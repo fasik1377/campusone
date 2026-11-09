@@ -1,6 +1,7 @@
 "use client";
 
-import { DEFAULT_SITE_CONTENT } from "@/lib/site-content";
+import Link from "next/link";
+import { DEFAULT_SITE_CONTENT, formatPhone, phoneHref } from "@/lib/site-content";
 import { useSite } from "./use-site";
 
 export function FooterTagline() {
@@ -8,25 +9,33 @@ export function FooterTagline() {
   return <p className="mt-3 max-w-md text-sm text-navy-200">{site?.content.footerTagline ?? DEFAULT_SITE_CONTENT.footerTagline}</p>;
 }
 
-/** Platform contact details from the Website content settings; falls back to general guidance. */
+/** Platform support contacts from the Website content settings (defaults shown until they load). */
 export function FooterContact() {
-  const c = useSite()?.content;
-  if (!c || (!c.contactEmail && !c.contactPhone && !c.contactAddress)) {
-    return <p className="text-navy-200">For academic questions, contact your college registrar. For account access, contact your college administrator.</p>;
-  }
+  const c = useSite()?.content ?? DEFAULT_SITE_CONTENT;
   return (
     <ul className="flex flex-col gap-2 text-navy-200">
-      {c.contactAddress && <li>📍 {c.contactAddress}</li>}
       {c.contactPhone && (
         <li>
-          📞 <a className="transition hover:text-gold-400" href={`tel:${c.contactPhone.replace(/\s+/g, "")}`}>{c.contactPhone}</a>
+          📞{" "}
+          <a className="transition hover:text-gold-400" href={phoneHref(c.contactPhone)}>
+            {formatPhone(c.contactPhone)}
+          </a>
         </li>
       )}
       {c.contactEmail && (
         <li>
-          ✉️ <a className="transition hover:text-gold-400" href={`mailto:${c.contactEmail}`}>{c.contactEmail}</a>
+          ✉️{" "}
+          <a className="break-all transition hover:text-gold-400" href={`mailto:${c.contactEmail}`}>
+            {c.contactEmail}
+          </a>
         </li>
       )}
+      {c.contactAddress && <li>📍 {c.contactAddress}</li>}
+      <li>
+        <Link href="/support" className="font-medium text-gold-400 hover:text-gold-500">
+          Visit the help centre →
+        </Link>
+      </li>
     </ul>
   );
 }
